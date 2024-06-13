@@ -3,6 +3,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "utils.h"
+
 const uint8_t COST_R = 4;
 const uint8_t COST_N = 8;
 const uint8_t COST_B = 13;
@@ -30,12 +32,16 @@ void init_piece_costs() {
 
 #define mov_st(max)                                                 \
     uint8_t* moves = (uint8_t*)malloc((max + 1) * sizeof(uint8_t)); \
+    if (moves == NULL) {                                            \
+        malloc_fail();                                              \
+        return NULL;                                                \
+    }                                                               \
     char piece = _p(x, y);                                          \
     bool color = is_white(piece);                                   \
     int _j = 0
 
-#define mov_end(max) \
-    moves[_j] = 255; \
+#define mov_end(max)     \
+    moves[_j] = ui8_max; \
     return moves
 
 #define mov_add(x, y) moves[_j++] = ch_pos(x, y)
@@ -81,21 +87,31 @@ uint16_t* moves_all_check(Board* board) {
     int cost = 0;
     for (int x = 0; x < 8; x++) {
         for (int y = 0; y < 8; y++) {
-            cost += PIECE_COSTS[_p(x, y)];
+            char piece = _p(x, y);
+            if (piece == ' ' || is_white(piece) != board->turn) continue;
+            cost += PIECE_COSTS[piece];
         }
     }
     uint16_t* moves = (uint16_t*)malloc(cost * sizeof(uint16_t));
+    if (moves == NULL) {
+        malloc_fail();
+        return NULL;
+    }
     int i = 0;
+    uint8_t* moves_p;
     for (int x = 0; x < 8; x++) {
         for (int y = 0; y < 8; y++) {
-            uint8_t* moves_p = moves_piece_check(board, x, y);
+            char piece = _p(x, y);
+            if (piece == ' ' || is_white(piece) != board->turn) continue;
+            moves_p = moves_piece_check(board, x, y);
             int pos = ch_pos(x, y);
-            for (int j = 0; moves_p[j] != 255; j++, i++) {
-                moves[i] = moves_p[j] * 8 * 8 + pos;
+            for (int j = 0; moves_p[j] != ui8_max; j++) {
+                moves[i++] = moves_p[j] * 8 * 8 + pos;
             }
             free(moves_p);
         }
     }
+    moves[i] = ui16_max;
     return moves;
 }
 
@@ -103,9 +119,13 @@ uint8_t* moves_piece_check(Board* board, uint8_t x, uint8_t y) {
     int j = 0;
     uint8_t* moves_all = moves_piece(board, x, y);
     uint8_t* moves = (uint8_t*)malloc((PIECE_COSTS[_p(x, y)] + 1) * sizeof(uint8_t));
+    if (moves == NULL) {
+        malloc_fail();
+        return NULL;
+    }
     char piece = _p(x, y);
     bool color = is_white(piece);
-    for (int i = 0; moves_all[i] != 255; i++) {
+    for (int i = 0; moves_all[i] != ui8_max; i++) {
         uint8_t mov = moves_all[i];
         uint8_t x2 = mov % 8;
         uint8_t y2 = mov / 8;
@@ -114,14 +134,14 @@ uint8_t* moves_piece_check(Board* board, uint8_t x, uint8_t y) {
         _p(x, y) = ' ';
         _p(x2, y2) = piece;
 
-        if (!can_king_captured(board, color)) {
+        if (!is_under_check(board, color) && !__invalid_castling(board, piece, x, y, x2, y2)) {
             moves[j++] = mov;
         }
 
         _p(x, y) = piece;
         _p(x2, y2) = target;
     }
-    moves[j] = 255;
+    moves[j] = ui8_max;
     free(moves_all);
     return moves;
 }
@@ -146,10 +166,15 @@ uint8_t* moves_piece(Board* board, uint8_t x, uint8_t y) {
         case 'p':
         case 'P':
             return moves_p(board, x, y);
-        case ' ':
+        case ' ': {
             uint8_t* moves = (uint8_t*)malloc(sizeof(uint8_t));
-            moves[0] = 255;
+            if (moves == NULL) {
+                malloc_fail();
+                return NULL;
+            }
+            moves[0] = ui8_max;
             return moves;
+        }
         default:
             printf("Something went wrong in moves_piece()");
             return NULL;
@@ -218,9 +243,7 @@ uint8_t* moves_k(Board* board, uint8_t x, uint8_t y) {
     // King side castling
     bool can_kingside_castle = ks &&
                                _p(x + 1, y) == ' ' &&
-                               _p(x + 2, y) == ' ' &&
-                               !is_square_visitable(board, x + 1, y, 1 - color) &&
-                               !is_square_visitable(board, x + 2, y, 1 - color);
+                               _p(x + 2, y) == ' ';
 
     if (can_kingside_castle) {
         mov_add(x + 2, y);
@@ -230,9 +253,7 @@ uint8_t* moves_k(Board* board, uint8_t x, uint8_t y) {
     bool can_queenside_castle = qs &&
                                 _p(x - 1, y) == ' ' &&
                                 _p(x - 2, y) == ' ' &&
-                                _p(x - 3, y) == ' ' &&
-                                !is_square_visitable(board, x - 1, y, 1 - color) &&
-                                !is_square_visitable(board, x - 2, y, 1 - color);
+                                _p(x - 3, y) == ' ';
 
     if (can_queenside_castle) {
         mov_add(x - 2, y);
@@ -277,11 +298,28 @@ uint8_t* moves_p(Board* board, uint8_t x, uint8_t y) {
     mov_end(COST_P);
 }
 
-void print_move_list(uint8_t* list) {
+void print_square_list(uint8_t* list) {
     printf("{ ");
-    for (int i = 0; list[i] != 255; i++) {
+    for (int i = 0; list[i] != ui8_max; i++) {
         printf("(%d, %d)", list[i] % 8, list[i] / 8);
-        if (list[i + 1] != 255) printf(", ");
+        if (list[i + 1] != ui8_max) printf(", ");
+    }
+    printf(" }\n");
+}
+
+void print_move_list(uint16_t* list) {
+    printf("{ ");
+    for (int i = 0; list[i] != ui16_max; i++) {
+        uint16_t n = list[i];
+        uint8_t a = n % 8;
+        n /= 8;
+        uint8_t b = n % 8;
+        n /= 8;
+        uint8_t c = n % 8;
+        n /= 8;
+        uint8_t d = n % 8;
+        printf("( (%d, %d), (%d, %d) )", a, b, c, d);
+        if (list[i + 1] != ui16_max) printf(", ");
     }
     printf(" }\n");
 }

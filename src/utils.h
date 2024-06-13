@@ -3,6 +3,11 @@
 
 #include <stdlib.h>
 
+#define malloc_fail() perror("Memory allocation failed")
+
+#define ui8_max 255
+#define ui16_max 65535
+
 #define F_BLK "\x1b[99;30m"
 #define F_RED "\x1b[99;31m"
 #define F_GRN "\x1b[99;32m"
@@ -32,6 +37,29 @@
 
 #define C_RES "\x1b[99;0m"
 
+#ifdef _WIN32
+#define clear_console() system("cls")
+#define USE_LETTERS_FOR_PIECES
+#else
+#define clear_console() system("clear")
+#endif
+
+#ifdef USE_LETTERS_FOR_PIECES
+#define _WK "K"
+#define _WQ "Q"
+#define _WR "R"
+#define _WB "B"
+#define _WN "N"
+#define _WP "P"
+#define _BK "k"
+#define _BQ "q"
+#define _BR "r"
+#define _BB "b"
+#define _BN "n"
+#define _BP "p"
+
+#else
+
 #define _WK "♔"
 #define _WQ "♕"
 #define _WR "♖"
@@ -45,10 +73,6 @@
 #define _BN "♞"
 #define _BP "♟"
 
-#ifdef _WIN32
-#define clear_console() system("cls")
-#else
-#define clear_console() system("clear")
 #endif
 
 #endif

@@ -13,6 +13,7 @@ uint8_t* moves_b(Board* board, uint8_t x, uint8_t y);
 uint8_t* moves_q(Board* board, uint8_t x, uint8_t y);
 uint8_t* moves_k(Board* board, uint8_t x, uint8_t y);
 uint8_t* moves_p(Board* board, uint8_t x, uint8_t y);
-void print_move_list(uint8_t* list);
+void print_square_list(uint8_t* list);
+void print_move_list(uint16_t* list);
 
 #endif
