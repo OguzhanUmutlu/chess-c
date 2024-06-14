@@ -2,6 +2,8 @@
 
 Chess in your terminal!
 
+![Example](./assets/example.gif)
+
 ## Building in Windows
 
 You can build in Windows by either using WSL or MinGW(or its alternatives).
