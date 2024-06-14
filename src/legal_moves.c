@@ -129,10 +129,15 @@ uint8_t* moves_piece_check(Board* board, uint8_t x, uint8_t y) {
         uint8_t mov = moves_all[i];
         uint8_t x2 = mov % 8;
         uint8_t y2 = mov / 8;
+
         char target = _p(x2, y2);
+        bool en_pas = (piece == 'p' || piece == 'P') && x != x2 && target == ' ';
 
         _p(x, y) = ' ';
         _p(x2, y2) = piece;
+        if (en_pas) {
+            _p(x2, y) = ' ';
+        }
 
         if (!is_under_check(board, color) && !__invalid_castling(board, piece, x, y, x2, y2)) {
             moves[j++] = mov;
@@ -140,6 +145,9 @@ uint8_t* moves_piece_check(Board* board, uint8_t x, uint8_t y) {
 
         _p(x, y) = piece;
         _p(x2, y2) = target;
+        if (en_pas) {
+            _p(x2, y) = color ? 'p' : 'P';
+        }
     }
     moves[j] = ui8_max;
     free(moves_all);
@@ -280,17 +288,18 @@ uint8_t* moves_p(Board* board, uint8_t x, uint8_t y) {
     // captures and en passant
     char cpt_r = x == 7 ? 0 : _p(x + 1, y + pw_move);
     char cpt_l = x == 0 ? 0 : _p(x - 1, y + pw_move);
+    uint8_t en_y = color ? 3 : 4;
 
     if (cpt_r) {
         mov_add_cap(x + 1, y + pw_move);
-        if (board->en_passant == x + 1) {
+        if (board->en_passant == x + 1 && y == en_y) {
             mov_add_mov(x + 1, y + pw_move);
         }
     }
 
     if (cpt_l) {
         mov_add_cap(x - 1, y + pw_move);
-        if (board->en_passant == x - 1) {
+        if (board->en_passant == x - 1 && y == en_y) {
             mov_add_mov(x - 1, y + pw_move);
         }
     }

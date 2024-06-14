@@ -37,6 +37,9 @@
 
 #define C_RES "\x1b[99;0m"
 
+void disable_canonical_mode();
+void enable_canonical_mode();
+
 #ifdef _WIN32
 #define clear_console() system("cls")
 #define USE_LETTERS_FOR_PIECES

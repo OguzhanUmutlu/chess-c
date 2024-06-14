@@ -98,11 +98,12 @@ void read_fen(Board* board, char* str) {
 
     if (str[i] != '-') {
         for (; i < len; i++) {
-            if (str[i] == ' ') break;
-            if (str[i] == 'K') board->castle_wk = 1;
-            if (str[i] == 'Q') board->castle_wq = 1;
-            if (str[i] == 'k') board->castle_bk = 1;
-            if (str[i] == 'q') board->castle_bq = 1;
+            char c = str[i];
+            if (c == ' ') break;
+            if (c == 'K') board->castle_wk = 1;
+            if (c == 'Q') board->castle_wq = 1;
+            if (c == 'k') board->castle_bk = 1;
+            if (c == 'q') board->castle_bq = 1;
         }
     } else {
         i += 2;
@@ -227,7 +228,7 @@ void update_castling_rights(Board* board) {
         board->castle_wk = 0;
         board->castle_wq = 0;
     } else {
-        if (_p(0, 0) != 'R') board->castle_wq = 0;
+        if (_p(0, 7) != 'R') board->castle_wq = 0;
         if (_p(7, 7) != 'R') board->castle_wk = 0;
     }
 }
@@ -243,12 +244,20 @@ bool move_piece(Board* board, uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, ch
     if (!can_basic_move(board, x1, y1, x2, y2)) return false;
 
     char target = _p(x2, y2);
+    bool en_pas = (piece == 'p' || piece == 'P') && x1 != x2 && target == ' ';
+
     _p(x1, y1) = ' ';
     _p(x2, y2) = piece;
+    if (en_pas) {
+        _p(x2, y1) = ' ';
+    }
 
     if (is_under_check(board, color) || __invalid_castling(board, piece, x1, y1, x2, y2)) {
         _p(x1, y1) = piece;
         _p(x2, y2) = target;
+        if (en_pas) {
+            _p(x2, y1) = color ? 'p' : 'P';
+        }
         return false;
     }
 
@@ -371,9 +380,8 @@ chess_status get_game_status(Board* board) {
 }
 
 void print_board(Board* board) {
-    printf("  a b c d e f g h");
     for (int i = 0; i < 64; i++) {
-        if (i % 8 == 0) printf(C_RES "\n%d ", 8 - i / 8);
+        if (i % 8 == 0) printf(C_RES "\n");
         char piece = board->pieces[i];
         bool sq_diff = (i + i / 8) % 2 == 0;
         char* cb = sq_diff ? B_BLU : B_B_WHT;
