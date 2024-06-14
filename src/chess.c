@@ -384,9 +384,9 @@ void print_board(Board* board) {
         if (i != 0 && i % 8 == 0) printf(C_RES "\n");
         char piece = board->pieces[i];
         bool sq_diff = (i + i / 8) % 2 == 0;
-        char* cb = sq_diff ? B_BLU : B_B_WHT;
+        char* cb = sq_diff ? B_B_WHT : B_BLU;
         if (is_highlighting(board, i)) {
-            cb = sq_diff ? B_RED : B_B_RED;
+            cb = sq_diff ? B_B_RED : B_RED;
         }
         char* cf = F_WHT;
         if (is_white(piece)) cf = F_BLK;
