@@ -2,7 +2,7 @@
 
 Chess in your terminal!
 
-![Example](./assets/example.mp4)
+![Example](./assets/example.gif)
 
 ## Building in Windows
 

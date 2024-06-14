@@ -161,7 +161,7 @@ int main() {
         input[bytes_read] = '\0';
 
         if (bytes_read == 6 && input[0] == 27 && input[1] == 91 && input[2] == 77 && input[3] == 32) {
-            on_board_click((input[4] - 33) / 2, input[5] - 34);
+            on_board_click((input[4] - 33) / 2, input[5] - 33);
         }
     }
 

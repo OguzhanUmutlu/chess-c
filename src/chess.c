@@ -381,7 +381,7 @@ chess_status get_game_status(Board* board) {
 
 void print_board(Board* board) {
     for (int i = 0; i < 64; i++) {
-        if (i % 8 == 0) printf(C_RES "\n");
+        if (i != 0 && i % 8 == 0) printf(C_RES "\n");
         char piece = board->pieces[i];
         bool sq_diff = (i + i / 8) % 2 == 0;
         char* cb = sq_diff ? B_BLU : B_B_WHT;
